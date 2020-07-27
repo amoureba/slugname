@@ -11,6 +11,9 @@ script_name=${0##*/}
 dry_run=0
 verbose=0
 
+## Rename files or folders : convert existing dashes to spaces 
+rename -- 's/^-/ /' *
+
 ## Initialize valid options
 opt_string=hnv
 
@@ -72,10 +75,12 @@ target="$source"
 ## Slugify target 
 target=$(echo "$target" | tr - ' ' | tr _ ' ') # Convert existing dashes and underscores to spaces
 target=$(echo "$target" | awk '{gsub(/^ +| +$/,"")} {print "=" $0 "="}') # Trim white space the string
-target=$(echo "$target" | tr A-Z a-z) # Convert to lowercase
+## target=$(echo "$target" | tr A-Z a-z) # Convert to lowercase
+target=$(echo "$target" | tr '[:upper:]' '[:lower:]') # Convert to lowercase
 target=$(echo "$target" | iconv -f UTF-8 -t ASCII//TRANSLIT) # Replace accent characters
 target=$(echo "$target" | tr -s [:space:] '-' | sed 's/-$//g') # Consolidate spaces and replace by dashe. Remove dashe at the end of string
 target=$(echo "$target" | sed -e 's/[^[:alnum:].-]//g') # The characters that can not be converted are removed
+target=$(echo "$target" | tr '[:upper:]' '[:lower:]') # Convert to lowercase
 
 ## Handle moving the source to target
 if [ "$target" == "$source" ]; then
