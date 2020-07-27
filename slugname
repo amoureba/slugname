@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#: Name        : slugify
+#: Name        : slugname
 #: Date        : 2020-07-27
 #: Author      : "Amour EBA" <amoureba@gmail.com>
 #: Version     : 1.0.0
