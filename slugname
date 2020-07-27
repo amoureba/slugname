@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+#: Name        : slugify
+#: Date        : 2020-07-27
+#: Author      : "Amour EBA" <amoureba@gmail.com>
+#: Version     : 1.0.0
+#: Description : Convert filenames into a web friendly format.
+#: Options     : See print_usage() function.
+
+## Initialize defaults
+script_name=${0##*/}
+dry_run=0
+verbose=0
+
+## Initialize valid options
+opt_string=hnv
+
+## Usage function
+function print_usage(){
+  echo "usage: $script_name [-$opt_string] source_file ..."
+  echo "   -h: help"
+  echo "   -n: dry run"
+  echo "   -v: verbose"
+}
+
+## For each provided option arg
+while getopts $opt_string opt
+do
+  case $opt in
+    h) print_usage; exit 0 ;;
+n) dry_run=1 ;;
+v) verbose=1 ;;
+*) exit 1 ;;
+esac
+done
+
+## Remove options from args
+shift "$(( $OPTIND - 1 ))"
+
+## Unless source_file arg(s) found, print usage and exit (0 to avoid breaking pipes)
+if [[ ! -n "$1" ]]; then
+  print_usage
+  exit 0
+fi
+
+## Identify case insensitive filesystems
+case_sensitive_filesystem=1
+case $OSTYPE in
+darwin*) case_sensitive_filesystem=0 ;; # OS X
+*) ;; # Do nothing
+esac
+
+## Notify if in dry_run mode
+if [ $dry_run -eq 1 ]; then
+  echo "--- Begin dry run mode."
+fi
+
+## For each file, directory, or glob
+for source in "$@"; do
+
+## Verify source exists
+if [ ! -e "$source" ]; then
+  echo "not found: $source"
+  ## Skip to next loop iteration unless in dry run mode
+  if [ $dry_run -eq 0 ]; then
+    continue
+  fi
+fi
+
+## Initialize target
+target="$source"
+
+## Slugify target 
+target=$(echo "$target" | tr - ' ' | tr _ ' ')
+target=$(echo "$target" | awk '{gsub(/^ +| +$/,"")} {print "=" $0 "="}')
+target=$(echo "$target" | tr A-Z a-z)
+target=$(echo "$target" | iconv -f UTF-8 -t ASCII//TRANSLIT)
+target=$(echo "$target" | tr -s [:space:] '-' | sed 's/-$//g')
+target=$(echo "$target" | sed -e 's/[^[:alnum:].-]//g')
+
+## Handle moving the source to target
+if [ "$target" == "$source" ]; then
+  ## If filename hasn't changed, skip move
+  ## Print if verbose is true
+  if [ $verbose -eq 1 ]; then
+    echo "ignore: $source"
+  fi
+elif [ -e "$target" -a $case_sensitive_filesystem -eq 1 ]; then
+  ## If conflicts with existing filename, skip move and complain
+  echo "conflict: $source"
+else
+  ## If move is legal
+  ## Skip move if dry_run is true
+  if [ $dry_run -eq 0 ]; then
+    mv "$source" "$target"
+  fi
+  ## Print if verbose or dry_run is true
+  if [ $verbose -eq 1 -o $dry_run -eq 1 ]; then
+    echo "rename: $source -> $target"
+  fi
+fi
+
+done
+
+## Notify if in dry_run mode
+if [ $dry_run -eq 1 ]; then
+  echo "--- End dry run mode."
+fi
