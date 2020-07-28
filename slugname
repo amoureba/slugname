@@ -11,8 +11,8 @@ script_name=${0##*/}
 dry_run=0
 verbose=0
 
-## Rename files or folders : convert existing dashes to spaces 
-rename -- 's/^-/ /' *
+## Rename files or folders : convert the dash at the start of the string to underscore
+rename -- 's/^-/_/g' *
 
 ## Initialize valid options
 opt_string=hnv
@@ -48,8 +48,8 @@ fi
 ## Identify case insensitive filesystems
 case_sensitive_filesystem=1
 case $OSTYPE in
-darwin*) case_sensitive_filesystem=0 ;; # OS X
-*) ;; # Do nothing
+  darwin*) case_sensitive_filesystem=0 ;; # OS X
+  *) ;; # Do nothing
 esac
 
 ## Notify if in dry_run mode
